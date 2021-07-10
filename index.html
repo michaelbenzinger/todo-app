@@ -27,7 +27,6 @@
 </head>
 
 <body>
-  <script src="./bundle.js"></script>
   <!-- <div class="app-header">
 
   </div> -->
@@ -39,17 +38,17 @@
     <div class="app-sidebar">
       <div class="app-lists">
 
-        <div class="sidebar-list">
+        <div class="sidebar-list sidebar-list-selected">
           <div class="sidebar-list-left">
             <div class="sidebar-list-icon fas fa-inbox"></div>
             <div class="sidebar-list-title bold">Inbox</div>
           </div>
           <div class="sidebar-list-right">
-            <div class="qty">2</div>
+            <!-- <div class="qty">2</div> -->
           </div>
         </div>
 
-        <div class="divider-sm"></div>
+        <!-- <div class="divider-sm"></div>
 
         <div class="sidebar-list">
           <div class="sidebar-list-left">
@@ -60,7 +59,7 @@
             <div class="qty qty-alert">1</div>
             <div class="qty">8</div>
           </div>
-        </div>
+        </div> -->
 
         <!-- <div class="sidebar-list">
           <div class="sidebar-list-left">
@@ -109,7 +108,7 @@
           </div>
         </div> -->
 
-        <div class="divider-md"></div>
+        <!-- <div class="divider-md"></div> -->
 
         <!-- <div class="sidebar-list">
           <div class="sidebar-list-left">
@@ -120,7 +119,7 @@
           </div>
         </div> -->
 
-        <div class="sidebar-list sidebar-list-selected">
+        <!-- <div class="sidebar-list sidebar-list-selected">
           <div class="sidebar-list-left">
             <div class="sidebar-list-progress"></div>
             <div class="sidebar-list-title">Vacation in Rome</div>
@@ -145,7 +144,7 @@
           </div>
           <div class="sidebar-list-right">
           </div>
-        </div>
+        </div> -->
 
         <!-- <div class="divider-md"></div>
 
@@ -238,8 +237,8 @@
 
         <div class="list-content-header">
           <!-- <div class="list-title-progress"></div> -->
-          <h1 class="list-title">Vacation in Rome</h1>
-          <p class="list-description">We'll go from June 14-22 and stop through London on the way back to visit Jane and Paolo. Monti looks like a great place to stay. Maybe do a night out in Trastevere.</p>
+          <h1 class="list-title">Inbox</h1>
+          <p class="list-description">Description of inbox</p>
           <!-- <div class="list-filters">
             <div class="list-filter list-filter-selected">All</div>
             <div class="list-filter">Errand</div>
@@ -248,56 +247,81 @@
         </div>
 
         <div class="list-content-main">
-          <div class="section-header">
+          <!-- <div class="section-header">
             <h2>Planning</h2>
-          </div>
+          </div> -->
+
           <div class="list-items">
-            <div class="list-item">
+            <!-- <div class="list-item">
               <div class="list-item-box"></div>
               <span>Book Flights</span>
             </div>
+
             <div class="list-item">
               <div class="list-item-box"></div>
               <span>Read about the metro</span>
             </div>
+            
             <div class="list-item">
               <div class="list-item-box"></div>
               <span>Borrow Sarah's travel guide</span>
             </div>
+
             <div class="list-item">
               <div class="list-item-box"></div>
               <span>Book a hotel room</span>
-            </div>
+            </div> -->
+
           </div>
-          <div class="divider-lg"></div>
+          <!-- <div class="add-area">
+            <div class="add-dialog">
+              <input placeholder="Name" class="a-d-name"></br>
+              <textarea maxlength="200" placeholder="Notes" class="a-d-notes"></textarea>
+              <div class="a-d-footer">
+                <input type="date" class="a-d-date">
+                <input placeholder="List" class="a-d-list">
+                <input placeholder="Priority" class="a-d-priority">
+                <input placeholder="Duration" class="a-d-duration">
+              </div>
+            </div>
+            <button class="add-task-btn">Add task</button>
+            <button class="cancel-task-btn">Cancel</button>
+          </div> -->
+
+          
+          <!-- <div class="divider-lg"></div>
           <div class="section-header">
             <h2>Things to buy</h2>
           </div>
-        </div>
-        <div class="list-items">
-          <div class="list-item">
-            <div class="list-item-box"></div>
-            <span>Power adapter</span>
-            <!-- <div class="list-item-label">Errand</div> -->
-          </div>
-          <div class="list-item">
-            <div class="list-item-box"></div>
-            <span>Extra camera battery</span>
-            <!-- <div class="list-item-label">Errand</div> -->
-          </div>
+
+          <div class="list-items">
+
+            <div class="list-item">
+              <div class="list-item-box"></div>
+              <span>Power adapter</span>
+              <div class="list-item-label">Errand</div>
+            </div>
+
+            <div class="list-item">
+              <div class="list-item-box"></div>
+              <span>Extra camera battery</span>
+              <div class="list-item-label">Errand</div>
+            </div>
+
+          </div> -->
 
           <div class="app-main-footer">
             <div class="main-footer-buttons">
-              <div class="main-footer-button fas fa-plus"></div>
-              <div class="main-footer-button far fa-calendar-alt"></div>
+              <div class="main-footer-button fas fa-plus" id="add-task"></div>
+              <!-- <div class="main-footer-button far fa-calendar-alt"></div>
               <div class="main-footer-button fas fa-arrow-right"></div>
-              <div class="main-footer-button fas fa-search"></div>
+              <div class="main-footer-button fas fa-search"></div> -->
             </div>
           </div>
         </div>
-
       </div>
     </div>
   </div>
+  <script src="./bundle.js"></script>
 </body>
 </html>
