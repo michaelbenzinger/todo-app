@@ -41,6 +41,7 @@ const displayHandler = (() => {
 
     const aDName = document.createElement('input');
     aDName.classList.add('a-d-name');
+    aDName.autocomplete = 'chrome-off';
     aDName.placeholder = 'Name';
 
     const aDNotes = document.createElement('textarea');
@@ -98,6 +99,8 @@ const displayHandler = (() => {
 
     document.querySelector('.list-content-main').appendChild(addArea);
 
+    aDName.focus();
+
     const exportTaskInput = () => {
       const name = aDName.value;
       const notes = aDNotes.value;
@@ -136,6 +139,40 @@ const displayHandler = (() => {
     listItem.appendChild(itemBox);
     listItem.appendChild(itemName);
     listItems.appendChild(listItem);
+
+    listItem.addEventListener('contextmenu', function(e) {
+      displayItemContextMenu(e);
+      e.preventDefault();
+    }, false);
+  }
+  const displayItemContextMenu = (event) => {
+    // Select the list-item element, not the checkbox or the task name span
+    let target = event.target;
+    if (target.classList[0] != 'list-item') target = target.parentElement;
+    // console.log(target.classList[0]);
+    const contextMenu = document.createElement('div');
+    contextMenu.classList.add('context-menu');
+    const contextMenuDelete = document.createElement('div');
+    contextMenuDelete.classList.add('context-menu-delete');
+    contextMenuDelete.innerText = 'Delete';
+
+    contextMenuDelete.addEventListener('click', function(e) {
+      console.log('You are deleting ' + target.childNodes[1].innerText);
+      contextMenu.remove();
+    });
+
+    contextMenu.appendChild(contextMenuDelete);
+    target.parentElement.appendChild(contextMenu);
+
+    const rect = target.parentElement.getBoundingClientRect();
+    const x = event.clientX;
+    const y = event.clientY;
+    
+    contextMenu.style.top = `${y}px`;
+    contextMenu.style.left = `${x}px`;
+
+    // contextMenu.style.bottom = `${-y + contextMenu.offsetHeight/4}px`;
+    // contextMenu.style.left = `${x - contextMenu.offsetWidth/2}px`;
   }
   return {
     clearList,

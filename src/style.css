@@ -1,5 +1,6 @@
 :root {
   --background-light-blue: rgb(245, 246, 247);
+  --gray-0: #323335;
   --gray-1: #505153;
   --gray-2: #93959b;
   --gray-3: #93959b;
@@ -308,10 +309,13 @@ font-size: 0.98em;
   letter-spacing: 0.13em;
   color: var(--gray-1);
 }
+.list-items {
+}
 .list-item {
   padding: 0.4em 0;
   cursor: pointer;
   transition: color 0.2s;
+  /* position: relative; */
 }
 .list-item:hover {
   color: var(--gray-3);
@@ -385,6 +389,19 @@ font-size: 0.98em;
 .cancel-task-btn {
   padding: 0.3em 0.8em;
   margin: 0.6em 0 0 0.1em;
+}
+.context-menu {
+  color: var(--gray-8);
+  position: absolute;
+  cursor: pointer;
+}
+.context-menu-delete {
+  background-color: var(--gray-0);
+  padding: 0.5em 0.75em;
+  transition: background-color 0.2s;
+}
+.context-menu-delete:hover {
+  background-color: var(--blue-1);
 }
 p {
   line-height: 1.4em;
