@@ -320,6 +320,13 @@ font-size: 0.98em;
 .list-item:hover {
   color: var(--gray-3);
 }
+.list-item-completed .item-name {
+  text-decoration: line-through;
+  color: var(--gray-5);
+}
+.list-item-completed .list-item-box {
+  background-color: var(--gray-6);
+}
 .list-item-box {
   margin-right: 0.5em;
   width: 1em;
@@ -342,6 +349,9 @@ font-size: 0.98em;
   display: inline-block;
   position: relative;
   bottom: 0.05em;
+}
+.item-name {
+  display: inline-block;
 }
 .add-dialog {
   width: 80%;
