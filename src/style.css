@@ -312,6 +312,9 @@ font-size: 0.98em;
 .list-items {
 }
 .list-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
   padding: 0.4em 0;
   cursor: pointer;
   transition: color 0.2s;
@@ -320,7 +323,7 @@ font-size: 0.98em;
 .list-item:hover {
   color: var(--gray-3);
 }
-.list-item-completed .item-name {
+.list-item-completed div {
   text-decoration: line-through;
   color: var(--gray-5);
 }
@@ -335,7 +338,7 @@ font-size: 0.98em;
   border-radius: 100px;
   display: inline-block;
   position: relative;
-  top: 0.25em;
+  /* top: 0.25em; */
 }
 .list-item-label {
   color: var(--gray-4);
@@ -352,6 +355,25 @@ font-size: 0.98em;
 }
 .item-name {
   display: inline-block;
+}
+.item-details {
+  padding-top: 0.3em;
+  display: flex;
+  flex-direction: row;
+  font-size: 0.88em;
+}
+.item-details div {
+  font-weight: 600;
+  padding-right: 0.7em;
+}
+.item-due-date {
+  color: var(--forest-1);
+}
+.item-duration {
+  color: var(--forest-1);
+}
+.item-notes {
+  color: var(--yellow-1);
 }
 .add-dialog {
   width: 80%;

@@ -5,7 +5,25 @@ import { format } from 'date-fns';
 const todoFactory = (name, notes, dueDate, list, duration, priority, id) => {
   const startDate = new Date(Date.now());
   let completed = false;
-  return {name, notes, dueDate, list, duration, priority, id, startDate, completed};
+  const getDuedateShorthand = () => {
+    const now = new Date(Date.now());
+    const difference = (dueDate.getTime() - now.getTime()) / 1000 / 60 / 60 / 24;
+    if (difference < -1) {
+      return 'Overdue'
+    } else if (difference < 0) {
+      return 'Today'
+    } else if (difference < 1) {
+      return 'Tomorrow'
+    } else if (difference < 6) {
+      return format(dueDate, 'EEEE')
+    } else {
+      return format(dueDate, 'MMM d')
+    }
+  };
+  const getDurationShorthand = () => {
+
+  };
+  return {name, notes, dueDate, list, duration, priority, id, startDate, completed, getDuedateShorthand, getDurationShorthand};
 };
 
 const listFactory = (name, description) => {
@@ -37,6 +55,35 @@ const listFactory = (name, description) => {
   }
   return {name, description, todos, addTodo, removeTodo, toggleCompleted};
 }
+
+const validation = (() => {
+  const validateInput = (name, notes, dueDate, list, priority, duration) => {
+    return true;
+  }
+  const convertDuration = duration => {
+    let convertedDuration = null;
+
+    const runTestStrings = (input, testArray, addOn) => {
+      testArray.forEach(testString => {
+        if (input.endsWith(testString)) {
+          let substring = parseFloat(input.substring(0,input.length-testString.length));
+          if (Number.isFinite(substring) && substring >= 0) {
+            convertedDuration = substring + addOn;
+          }
+        }
+      });
+    }
+
+    runTestStrings(duration, ['m', 'min', 'minute', 'minutes'], 'min');
+    runTestStrings(duration, ['h', 'hr', 'hrs', 'hour', 'hours'], 'hr');
+
+    return convertedDuration;
+  }
+  return {
+    validateInput,
+    convertDuration,
+  }
+})();
 
 const taskHandler = (() => {
   let id = 0;
@@ -75,7 +122,7 @@ const displayHandler = (() => {
   });
 
   const makeAddArea = () => {
-    console.log(document.querySelector('.add-area'));
+    // console.log(document.querySelector('.add-area'));
     if (document.querySelector('.add-area') != null) {
       return false;
     } else {
@@ -153,7 +200,7 @@ const displayHandler = (() => {
       aDName.focus();
 
       const addInputtedTask = () => {
-        if (aDName.value != "") {
+        if (validation.validateInput(aDName.value, aDNotes.value, aDDate.value, aDList.value, aDPriority.value, aDDuration.value)) {
           taskHandler.addTask(exportTaskInput(), database.getCurrentList());
           clearList();
           displayList(database.getCurrentList());
@@ -163,11 +210,21 @@ const displayHandler = (() => {
       const exportTaskInput = () => {
         const name = aDName.value;
         const notes = aDNotes.value;
-        const dueDate = aDDate.value;
+        const dueDate = null;
+        if (aDDate.value) {
+          dueDate = new Date(convertDateString(aDDate.value));
+        }
         const list = aDList.value;
         const priority = aDPriority.value;
-        const duration = aDDuration.value;
+        const duration = validation.convertDuration(aDDuration.value);
         return {name, notes, dueDate, list, duration, priority};
+      }
+      const convertDateString = date => {
+        let newDate = "";
+        newDate += date.slice(5)
+        newDate += "-";
+        newDate += date.slice(0,4);
+        return newDate;
       }
       return true;
     }
@@ -190,17 +247,47 @@ const displayHandler = (() => {
     })
   }
   const displayTask = task => {
+    // console.log(task.dueDate);
     const listItems = document.querySelector('.list-items');
     const listItem = document.createElement('div');
     listItem.classList.add('list-item');
     listItem.dataset.id = task.id;
+
     const itemBox = document.createElement('div');
     itemBox.classList.add('list-item-box');
+    const itemInfo = document.createElement('div');
+    itemInfo.classList.add('item-info');
     const itemName = document.createElement('div');
     itemName.classList.add('item-name');
     itemName.innerText = task.name;
+    const itemDetails = document.createElement('div');
+    itemDetails.classList.add('item-details');
+
+    if (task.dueDate) {
+      const itemDueDate = document.createElement('div');
+      itemDueDate.classList.add('item-due-date');
+      itemDueDate.innerText = task.getDuedateShorthand();
+      itemDetails.appendChild(itemDueDate);
+    }
+    if (task.duration) {
+      const itemDuration = document.createElement('div');
+      itemDuration.classList.add('item-duration');
+      itemDuration.innerText = task.duration;
+      itemDetails.appendChild(itemDuration);
+    }
+    if (task.notes) {
+      const itemNotes = document.createElement('div');
+      itemNotes.classList.add('item-notes');
+      itemNotes.innerText = 'Notes';
+      itemDetails.appendChild(itemNotes);
+    }
+
+    itemInfo.appendChild(itemName);
+
+    if (itemDetails.hasChildNodes()) { itemInfo.appendChild(itemDetails); }
+
     listItem.appendChild(itemBox);
-    listItem.appendChild(itemName);
+    listItem.appendChild(itemInfo);
     listItems.appendChild(listItem);
 
     if (task.completed == true) {
@@ -235,7 +322,7 @@ const displayHandler = (() => {
     contextMenuDelete.innerText = 'Delete';
 
     contextMenuDelete.addEventListener('click', function(e) {
-      console.log('You are deleting ' + target.dataset.id);
+      // console.log('You are deleting ' + target.dataset.id);
       taskHandler.removeTask(target.dataset.id, database.getCurrentList());
       contextMenu.remove();
     });
@@ -269,9 +356,9 @@ const displayHandler = (() => {
 
 const database = (() => {
   let currentList = listFactory('Inbox', 'Description of inbox');
-  taskHandler.addTask({'name': `Book flights`}, currentList);
+  taskHandler.addTask({'name': `Book flights`, 'dueDate': new Date('07-13-2021'), 'notes': 'I have notes'}, currentList);
   taskHandler.addTask({'name': `Read about the metro`}, currentList);
-  taskHandler.addTask({'name': `Borrow Sarah's travel guide`}, currentList);
+  taskHandler.addTask({'name': `Borrow Sarah's travel guide`, 'duration': '45min'}, currentList);
   taskHandler.addTask({'name': `Book a hotel room`}, currentList);
   const getCurrentList = () => {
     return currentList;
