@@ -53,7 +53,10 @@ const listFactory = (name, description) => {
     });
     return index;
   }
-  return {name, description, todos, addTodo, removeTodo, toggleCompleted};
+  const getTaskFromId = id => {
+    return todos[getIndexFromId(id)];
+  }
+  return {name, description, todos, addTodo, removeTodo, toggleCompleted, getTaskFromId};
 }
 
 const validation = (() => {
@@ -210,7 +213,7 @@ const displayHandler = (() => {
       const exportTaskInput = () => {
         const name = aDName.value;
         const notes = aDNotes.value;
-        const dueDate = null;
+        let dueDate = null;
         if (aDDate.value) {
           dueDate = new Date(convertDateString(aDDate.value));
         }
@@ -279,6 +282,12 @@ const displayHandler = (() => {
       const itemNotes = document.createElement('div');
       itemNotes.classList.add('item-notes');
       itemNotes.innerText = 'Notes';
+      itemNotes.addEventListener('mouseover', function(e) {
+        displayItemNotes(e);
+      });
+      itemNotes.addEventListener('mouseleave', function(e) {
+        hideItemNotes(e);
+      });
       itemDetails.appendChild(itemNotes);
     }
 
@@ -296,7 +305,7 @@ const displayHandler = (() => {
 
     listItem.addEventListener('contextmenu', function(e) {
       displayItemContextMenu(e);
-      e.preventDefault();
+      // e.preventDefault();
     }, false);
     itemBox.addEventListener('click', function(e) {
       if (database.getCurrentList().toggleCompleted(e.target.parentElement.dataset.id)) {
@@ -305,6 +314,38 @@ const displayHandler = (() => {
         itemBox.parentElement.classList.remove('list-item-completed');
       }
     });
+  }
+  const displayItemNotes = (event) => {
+    const previousNotesPopUp = document.querySelector('.notes-pop-up');
+    if (!previousNotesPopUp) {
+      const notesPopUp = document.createElement('div');
+      notesPopUp.classList.add('notes-pop-up');
+      const listItems = document.querySelector('.list-items');
+      listItems.appendChild(notesPopUp);
+      const thisTodoId = event.target.parentElement.parentElement.parentElement.dataset.id;
+      notesPopUp.innerText = database.getCurrentList().getTaskFromId(thisTodoId).notes;
+
+      const targetRect = event.target.getBoundingClientRect();
+      const notesRect = notesPopUp.getBoundingClientRect();
+      const x = targetRect.left - notesRect.width/2 + targetRect.width/2;
+      const y = targetRect.top + targetRect.height*1.5;
+      
+      notesPopUp.style.top = `${y}px`;
+      notesPopUp.style.left = `${x}px`;
+    }
+  }
+  const hideItemNotes = (event) => {
+    const notesPopUp = document.querySelector('.notes-pop-up');
+    if (notesPopUp) {
+      notesPopUp.classList.add('notes-pop-up-leave');
+      setTimeout(() => {
+        notesPopUp.remove();
+        // const notesPopUpAll = document.querySelectorAll('.notes-pop-up');
+        // notesPopUpAll.forEach(note => {
+        //   note.remove();
+        // });
+      }, 200);
+    }
   }
   const displayItemContextMenu = (event) => {
     const existingContextMenu = document.querySelector('.context-menu');
@@ -356,7 +397,7 @@ const displayHandler = (() => {
 
 const database = (() => {
   let currentList = listFactory('Inbox', 'Description of inbox');
-  taskHandler.addTask({'name': `Book flights`, 'dueDate': new Date('07-13-2021'), 'notes': 'I have notes'}, currentList);
+  taskHandler.addTask({'name': `Book flights`, 'dueDate': new Date('07-13-2021'), 'notes': "I have literally written the longest note in the history of notes. If you wish to defeat me, you must challenge me to a note-making note-taking duel to the death."}, currentList);
   taskHandler.addTask({'name': `Read about the metro`}, currentList);
   taskHandler.addTask({'name': `Borrow Sarah's travel guide`, 'duration': '45min'}, currentList);
   taskHandler.addTask({'name': `Book a hotel room`}, currentList);

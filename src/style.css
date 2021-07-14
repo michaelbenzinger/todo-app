@@ -12,6 +12,7 @@
   --red-1: rgb(248, 77, 105);
   --brown-1: rgb(184, 152, 105);
   --yellow-1: rgb(253, 183, 32);
+  --yellow-2: rgb(255, 240, 206);
   --lime-1: rgb(115, 224, 88);
   --forest-1: rgb(56, 170, 117);
   --blue-1: rgb(59, 118, 228);
@@ -364,7 +365,7 @@ font-size: 0.98em;
 }
 .item-details div {
   font-weight: 600;
-  padding-right: 0.7em;
+  margin-right: 0.7em;
 }
 .item-due-date {
   color: var(--forest-1);
@@ -374,6 +375,44 @@ font-size: 0.98em;
 }
 .item-notes {
   color: var(--yellow-1);
+}
+.notes-pop-up {
+  font-size: 0.85em;
+  background-color: var(--yellow-2);
+  max-width: 30ch;
+  line-height: 1.3em;
+  color: var(--gray-1);
+  position: absolute;
+  padding: 0.5em;
+  border: 1px solid var(--gray-4);
+  border-radius: 0.3em;
+  animation-duration: 0.3s;
+  animation-name: slideup;
+  pointer-events: none;
+}
+.notes-pop-up-leave {
+  animation-duration: 0.3s;
+  animation-name: slideup-reverse;
+}
+@keyframes slideup {
+  from {
+    opacity: 0;
+    transform: translateY(-0.4em);
+  }
+  to {
+    opacity: 100%;
+    transform: translateY(0);
+  }
+}
+@keyframes slideup-reverse {
+  from {
+    opacity: 100%;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-0.4em);
+  }
 }
 .add-dialog {
   width: 80%;
