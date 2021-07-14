@@ -26,7 +26,7 @@ const todoFactory = (name, notes, dueDate, list, duration, priority, id) => {
   return {name, notes, dueDate, list, duration, priority, id, startDate, completed, getDuedateShorthand, getDurationShorthand};
 };
 
-const listFactory = (name, description) => {
+const listFactory = (name, description, id) => {
   const todos = [];
   const addTodo = (task) => {
     todos.push(task);
@@ -56,7 +56,14 @@ const listFactory = (name, description) => {
   const getTaskFromId = id => {
     return todos[getIndexFromId(id)];
   }
-  return {name, description, todos, addTodo, removeTodo, toggleCompleted, getTaskFromId};
+  const getPercentCompleted = () => {
+    let completedCount = 0;
+    todos.forEach(todo => {
+      if (todo.completed) completedCount ++;
+    });
+    return completedCount/todos.length;
+  }
+  return {name, description, id, todos, addTodo, removeTodo, toggleCompleted, getTaskFromId, getPercentCompleted};
 }
 
 const validation = (() => {
@@ -97,7 +104,6 @@ const taskHandler = (() => {
   }
   const removeTask = (id, list) => {
     list.removeTodo(id);
-    displayHandler.clearList();
     displayHandler.displayList(list);
   }
   const getId = () => {
@@ -123,6 +129,10 @@ const displayHandler = (() => {
       }
     }
   });
+  const newListButton = document.querySelector('.app-sidebar-footer');
+  newListButton.addEventListener('click', () => {
+    makeListModal();
+  })
 
   const makeAddArea = () => {
     // console.log(document.querySelector('.add-area'));
@@ -205,9 +215,8 @@ const displayHandler = (() => {
       const addInputtedTask = () => {
         if (validation.validateInput(aDName.value, aDNotes.value, aDDate.value, aDList.value, aDPriority.value, aDDuration.value)) {
           taskHandler.addTask(exportTaskInput(), database.getCurrentList());
-          clearList();
           displayList(database.getCurrentList());
-          removeAddArea();
+          // removeAddArea(); - not necessary because it's taken out with clearList
         }
       }
       const exportTaskInput = () => {
@@ -236,15 +245,150 @@ const displayHandler = (() => {
     const addArea = document.querySelector('.add-area');
     addArea.remove();
   }
+  const makeListModal = () => {
+    const listModal = document.createElement('div');
+    listModal.classList.add('list-modal');
+    const listModalContent = document.createElement('div');
+    listModalContent.classList.add('list-modal-content');
+    const listModalPrompt = document.createElement('h2');
+    listModalPrompt.classList.add('list-modal-prompt');
+    listModalPrompt.innerText = 'New List';
+    const listModalName = document.createElement('input');
+    listModalName.classList.add('list-modal-name');
+    listModalName.placeholder = 'Name';
+    const listModalDescription = document.createElement('textarea');
+    listModalDescription.classList.add('list-modal-description');
+    listModalDescription.placeholder = 'Description';
+    const listModalButton = document.createElement('button');
+    listModalButton.classList.add('list-modal-button');
+    listModalButton.innerText = 'Create';
+
+    listModalButton.addEventListener('click', () => {
+      addTaskFromModal();
+    });
+
+    const appContainer = document.querySelector('.app-container');
+
+    listModalContent.appendChild(listModalPrompt);
+    listModalContent.appendChild(listModalName);
+    listModalContent.appendChild(listModalDescription);
+    listModalContent.appendChild(listModalButton);
+    listModal.appendChild(listModalContent);
+    appContainer.appendChild(listModal);
+
+    listModalName.focus();
+
+    listModal.addEventListener('click', function(e) {
+      if (e.target == listModal) {
+        listModal.remove();
+      }
+    });
+    listModal.addEventListener('keydown', function(e) {
+      if (e.key == 'Enter') {
+        addTaskFromModal();
+      } else if (e.key == 'Escape') {
+        removeListModal();
+      }
+    });
+
+    const addTaskFromModal = () => {
+      if (listModalName.value) {
+        database.addList(listModalName.value, listModalDescription.value);
+        removeListModal();
+      }
+    }
+  }
+  const removeListModal = () => {
+    const listModal = document.querySelector('.list-modal');
+    listModal.remove();
+  }
+  const clearSidebar = () => {
+    const appLists = document.querySelector('.app-lists');
+    if (appLists) {
+      appLists.remove();
+    }
+  }
+  const displaySidebar = () => {
+    clearSidebar();
+    let lists = database.getLists();
+    const appLists = document.createElement('div');
+    appLists.classList.add('app-lists')
+    lists.forEach(list => {
+      const sidebarList = document.createElement('div');
+      sidebarList.classList.add('sidebar-list');
+
+      if (list.id == database.getCurrentList().id) {
+        sidebarList.classList.add('sidebar-list-selected');
+      }
+
+      const sidebarListLeft = document.createElement('div');
+      sidebarListLeft.classList.add('sidebar-list-left');
+      const sidebarListProgress = document.createElement('div');
+      sidebarListProgress.classList.add('sidebar-list-progress');
+      const sidebarListTitle = document.createElement('div');
+      sidebarListTitle.classList.add('sidebar-list-title');
+      sidebarListTitle.innerText = list.name;
+
+      sidebarListProgress.dataset.id = list.id;
+      sidebarListTitle.dataset.id = list.id;
+      sidebarListLeft.dataset.id = list.id;
+      sidebarList.dataset.id = list.id;
+
+      sidebarListLeft.appendChild(sidebarListProgress);
+      sidebarListLeft.appendChild(sidebarListTitle);
+      sidebarList.appendChild(sidebarListLeft);
+      appLists.appendChild(sidebarList);
+
+      sidebarList.addEventListener('click', function(e) {
+        database.setCurrentList(e.target.dataset.id);
+        displayList(database.getCurrentList());
+        displaySidebar();
+        // console.log(database.getCurrentList().getPercentCompleted());
+      });
+    });
+    const appSidebar = document.querySelector('.app-sidebar');
+    const appSidebarFooter = document.querySelector('.app-sidebar-footer');
+    appSidebar.insertBefore(appLists, appSidebarFooter)
+  }
   const clearList = () => {
-    const listArea = document.querySelector('.list-items');
-    listArea.remove();
+    const listContent = document.querySelector('.list-content');
+    if (listContent) {
+      listContent.remove();
+    }
   }
   const displayList = list => {
-    const listContentMain = document.querySelector('.list-content-main');
+    clearList();
+    const appMain = document.querySelector('.app-main');
+    const listContent = document.createElement('div');
+    listContent.classList.add('list-content');
+    const listContentHeader = document.createElement('div');
+    listContentHeader.classList.add('list-content-header');
+
+    const currentList = database.getCurrentList();
+
+    const listTitle = document.createElement('h1');
+    listTitle.classList.add('list-title');
+    listTitle.innerText = currentList.name;
+    listContentHeader.appendChild(listTitle);
+
+    if (currentList.description) {
+      const listDescription = document.createElement('p');
+      listDescription.classList.add('list-description');
+      listDescription.innerText = currentList.description;
+      listContentHeader.appendChild(listDescription);
+    }
+
+    const listContentMain = document.createElement('div');
+    listContentMain.classList.add('list-content-main');
     const listItems = document.createElement('div');
     listItems.classList.add('list-items')
+
+
     listContentMain.appendChild(listItems);
+    listContent.appendChild(listContentHeader);
+    listContent.appendChild(listContentMain);
+    appMain.appendChild(listContent);
+
     list.todos.forEach(task => {
       displayTask(task);
     })
@@ -258,30 +402,37 @@ const displayHandler = (() => {
 
     const itemBox = document.createElement('div');
     itemBox.classList.add('list-item-box');
+    itemBox.dataset.id = task.id;
     const itemInfo = document.createElement('div');
     itemInfo.classList.add('item-info');
+    itemInfo.dataset.id = task.id;
     const itemName = document.createElement('div');
     itemName.classList.add('item-name');
     itemName.innerText = task.name;
+    itemName.dataset.id = task.id;
     const itemDetails = document.createElement('div');
     itemDetails.classList.add('item-details');
+    itemDetails.dataset.id = task.id;
 
     if (task.dueDate) {
       const itemDueDate = document.createElement('div');
       itemDueDate.classList.add('item-due-date');
       itemDueDate.innerText = task.getDuedateShorthand();
+      itemDueDate.dataset.id = task.id;
       itemDetails.appendChild(itemDueDate);
     }
     if (task.duration) {
       const itemDuration = document.createElement('div');
       itemDuration.classList.add('item-duration');
       itemDuration.innerText = task.duration;
+      itemDuration.dataset.id = task.id;
       itemDetails.appendChild(itemDuration);
     }
     if (task.notes) {
       const itemNotes = document.createElement('div');
       itemNotes.classList.add('item-notes');
       itemNotes.innerText = 'Notes';
+      itemNotes.dataset.id = task.id;
       itemNotes.addEventListener('mouseover', function(e) {
         displayItemNotes(e);
       });
@@ -305,7 +456,7 @@ const displayHandler = (() => {
 
     listItem.addEventListener('contextmenu', function(e) {
       displayItemContextMenu(e);
-      // e.preventDefault();
+      e.preventDefault();
     }, false);
     itemBox.addEventListener('click', function(e) {
       if (database.getCurrentList().toggleCompleted(e.target.parentElement.dataset.id)) {
@@ -355,6 +506,8 @@ const displayHandler = (() => {
     // Select the list-item element, not the checkbox or the task name span
     let target = event.target;
     if (target.classList[0] != 'list-item') target = target.parentElement;
+    if (target.classList[0] != 'list-item') target = target.parentElement;
+    if (target.classList[0] != 'list-item') target = target.parentElement;
     // console.log(target.classList[0]);
     const contextMenu = document.createElement('div');
     contextMenu.classList.add('context-menu');
@@ -362,8 +515,10 @@ const displayHandler = (() => {
     contextMenuDelete.classList.add('context-menu-delete');
     contextMenuDelete.innerText = 'Delete';
 
+    console.log(target);
+
     contextMenuDelete.addEventListener('click', function(e) {
-      // console.log('You are deleting ' + target.dataset.id);
+      console.log("You are deleting " + target.dataset.id);
       taskHandler.removeTask(target.dataset.id, database.getCurrentList());
       contextMenu.remove();
     });
@@ -389,6 +544,8 @@ const displayHandler = (() => {
   }
   return {
     clearList,
+    clearSidebar,
+    displaySidebar,
     displayList,
     displayTask,
     makeAddArea,
@@ -396,22 +553,77 @@ const displayHandler = (() => {
 })();
 
 const database = (() => {
-  let currentList = listFactory('Inbox', 'Description of inbox');
-  taskHandler.addTask({'name': `Book flights`, 'dueDate': new Date('07-13-2021'), 'notes': "I have literally written the longest note in the history of notes. If you wish to defeat me, you must challenge me to a note-making note-taking duel to the death."}, currentList);
-  taskHandler.addTask({'name': `Read about the metro`}, currentList);
-  taskHandler.addTask({'name': `Borrow Sarah's travel guide`, 'duration': '45min'}, currentList);
-  taskHandler.addTask({'name': `Book a hotel room`}, currentList);
+  let id = 0;
+  let currentList = null;
+  const lists = [];
+  const addList = (name, description) => {
+    const list = listFactory(name, description, id);
+    lists.push(list);
+    setCurrentList(id);
+    id++;
+    displayHandler.displayList(currentList);
+    displayHandler.displaySidebar();
+    return list;
+  }
+  const removeList = id => {
+    const index = getListIndexFromId(id);
+    lists.splice(index, 1);
+  }
+  const getListIndexFromId = id => {
+    const index = lists.findIndex(list => {
+      if (list.id == id) {
+        return true;
+      }
+    });
+    return index;
+  }
+  const getLists = () => {
+    return lists;
+  }
   const getCurrentList = () => {
     return currentList;
   }
-  displayHandler.displayList(currentList);
+  const setCurrentList = id => {
+    currentList = lists[getListIndexFromId(id)];
+    return currentList;
+  }
+  // let currentList = listFactory('Inbox', 'The best inbox ever');
+  // addList('Today', "It's better than yesterday");
+  // taskHandler.addTask({'name': `Book flights`, 'dueDate': new Date('07-13-2021'), 'notes': "I have literally written the longest note in the history of notes. If you wish to defeat me, you must challenge me to a note-making note-taking duel to the death."}, currentList);
+  // taskHandler.addTask({'name': `Read about the metro`}, currentList);
+  // taskHandler.addTask({'name': `Borrow Sarah's travel guide`, 'duration': '45min'}, currentList);
+  // taskHandler.addTask({'name': `Book a hotel room`}, currentList);
+
   return {
+    getLists,
     getCurrentList,
+    setCurrentList,
+    addList,
+    removeList,
   }
 })();
 
+database.addList('Today', "It's better than yesterday");
+taskHandler.addTask({'name': `Book flights`, 'dueDate': new Date('07-13-2021'), 'notes': "I have literally written the longest note in the history of notes. If you wish to defeat me, you must challenge me to a note-making note-taking duel to the death."}, database.getCurrentList());
+taskHandler.addTask({'name': `Read about the metro`}, database.getCurrentList());
+taskHandler.addTask({'name': `Borrow Sarah's travel guide`, 'duration': '45min'}, database.getCurrentList());
+taskHandler.addTask({'name': `Book a hotel room`}, database.getCurrentList());
 
+database.addList('Tomorrow');
+taskHandler.addTask({'name': `Eat Macaroni`, 'dueDate': new Date(Date.now())}, database.getCurrentList());
+taskHandler.addTask({'name': `Eat some cheese`, 'duration': '60min'}, database.getCurrentList());
+taskHandler.addTask({'name': `Go to bed with a full stomach`, 'notes': 'Sweet dreams!'}, database.getCurrentList());
 
+database.setCurrentList(0);
+
+displayHandler.displayList(database.getCurrentList());
+displayHandler.displaySidebar();
+
+console.log(database.getCurrentList());
+
+// setTimeout(() => {
+//   displayHandler.clearSidebar();
+// }, 2000)
 //testing
 
 // const sampleTodo = todoFactory('Power adapter', 'Buy from Ace Hardware', new Date(2021, 6, 15));
