@@ -23,7 +23,19 @@ const todoFactory = (name, notes, dueDate, list, duration, priority, id) => {
   const getDurationShorthand = () => {
 
   };
-  return {name, notes, dueDate, list, duration, priority, id, startDate, completed, getDuedateShorthand, getDurationShorthand};
+  const getDueDateInputFormat = () => {
+    if (dueDate) {
+      let month = dueDate.getMonth() + 1;
+      if (month.toString().length == 1) {
+        month = `0${month}`;
+      }
+      let formatted = `${dueDate.getFullYear()}-${month}-${dueDate.getDate()}`;
+      return formatted;
+    } else {
+      return "";
+    }
+  }
+  return {name, notes, dueDate, list, duration, priority, id, startDate, completed, getDuedateShorthand, getDurationShorthand, getDueDateInputFormat};
 };
 
 const listFactory = (name, description, id) => {
@@ -63,7 +75,7 @@ const listFactory = (name, description, id) => {
     });
     return completedCount/todos.length;
   }
-  return {name, description, id, todos, addTodo, removeTodo, toggleCompleted, getTaskFromId, getPercentCompleted};
+  return {name, description, id, todos, addTodo, removeTodo, toggleCompleted, getIndexFromId, getTaskFromId, getPercentCompleted};
 }
 
 const validation = (() => {
@@ -97,9 +109,14 @@ const validation = (() => {
 
 const taskHandler = (() => {
   let id = 0;
-  const addTask = ({name, notes, dueDate, list, duration, priority}, currentList) => {
+  const addTask = ({name, notes, dueDate, list, duration, priority}, targetList) => {
     const newTask = todoFactory(name, notes, dueDate, list, duration, priority, id);
-    currentList.addTodo(newTask);
+    targetList.addTodo(newTask);
+    id ++;
+  }
+  const changeTask = ({name, notes, dueDate, list, duration, priority}, targetList, existingId) => {
+    const newTask = todoFactory(name, notes, dueDate, list, duration, priority, id);
+    targetList.todos[targetList.getIndexFromId(existingId)] = newTask;
     id ++;
   }
   const removeTask = (id, list) => {
@@ -111,31 +128,35 @@ const taskHandler = (() => {
   }
   return {
     addTask,
+    changeTask,
     removeTask,
-    getId
+    getId,
   };
 })();
 
 const displayHandler = (() => {
   const addButton = document.querySelector('#add-task');
   addButton.addEventListener('click', () => {
-    makeAddArea();
+    makeAddArea("add");
   });
   document.addEventListener('keydown', function(e) {
     if (e.shiftKey && e.key == 'N') {
       if (document.querySelector('.add-area') == null) {
         e.preventDefault();
-        makeAddArea();
+        makeAddArea("add");
       }
     }
   });
   const newListButton = document.querySelector('.app-sidebar-footer');
   newListButton.addEventListener('click', () => {
-    makeListModal();
+    makeListModal('add');
   })
 
-  const makeAddArea = () => {
-    // console.log(document.querySelector('.add-area'));
+  const makeAddArea = (type, target) => {
+    let id;
+    if (target) {
+      id = target.dataset.id;
+    }
     if (document.querySelector('.add-area') != null) {
       return false;
     } else {
@@ -174,20 +195,15 @@ const displayHandler = (() => {
       aDDuration.classList.add('a-d-duration');
       aDDuration.placeholder = 'duration';
 
-      const addTaskBtn = document.createElement('button');
-      addTaskBtn.classList.add('add-task-btn');
-      addTaskBtn.innerText = 'Add task';
-      addTaskBtn.addEventListener('click', () => {
-        // console.log(getTaskFromInput());
-        addInputtedTask();
-      });
-
-      const cancelTaskBtn = document.createElement('button');
-      cancelTaskBtn.classList.add('cancel-task-btn');
-      cancelTaskBtn.innerText = 'Cancel';
-      cancelTaskBtn.addEventListener('click', () => {
-        removeAddArea();
-      });
+      if (type == "edit") {
+        const thisTodo = database.getCurrentList().getTaskFromId(id);
+        aDName.value = thisTodo.name;
+        aDNotes.value = thisTodo.notes || "";
+        aDDate.value = thisTodo.getDueDateInputFormat();
+        aDList.value = "";
+        aDPriority.value = thisTodo.priority || "";
+        aDDuration.value = thisTodo.duration || "";
+      }
 
       aDFooter.appendChild(aDDate);
       aDFooter.appendChild(aDList);
@@ -197,24 +213,78 @@ const displayHandler = (() => {
       addDialog.appendChild(aDNotes);
       addDialog.appendChild(aDFooter);
       addArea.appendChild(addDialog);
-      addArea.appendChild(addTaskBtn);
-      addArea.appendChild(cancelTaskBtn);
 
-      addArea.addEventListener('keydown', function(e) {
-        if (e.key == 'Enter') {
+      if (type == "add") {
+        const addTaskBtn = document.createElement('button');
+        addTaskBtn.classList.add('add-task-btn');
+        addTaskBtn.innerText = 'Add task';
+        addTaskBtn.addEventListener('click', () => {
           addInputtedTask();
-        } else if (e.key == 'Escape') {
-          removeAddArea();
-        }
-      });
+        });
 
-      document.querySelector('.list-content-main').appendChild(addArea);
+        const cancelTaskBtn = document.createElement('button');
+        cancelTaskBtn.classList.add('cancel-task-btn');
+        cancelTaskBtn.innerText = 'Cancel';
+        cancelTaskBtn.addEventListener('click', () => {
+          removeAddArea();
+        });
+
+        addArea.appendChild(addTaskBtn);
+        addArea.appendChild(cancelTaskBtn);
+
+        addArea.addEventListener('keydown', function(e) {
+          if (e.key == 'Enter') {
+            addInputtedTask();
+          } else if (e.key == 'Escape') {
+            removeAddArea();
+          }
+        });
+
+        document.querySelector('.list-items').appendChild(addArea);
+
+      } else if (type == "edit") {
+        const changeTaskBtn = document.createElement('button');
+        changeTaskBtn.classList.add('change-task-btn');
+        changeTaskBtn.innerText = 'Save changes';
+        changeTaskBtn.addEventListener('click', () => {
+          changeInputtedTask();
+        });
+
+        const cancelTaskBtn = document.createElement('button');
+        cancelTaskBtn.classList.add('cancel-task-btn');
+        cancelTaskBtn.innerText = 'Cancel';
+        cancelTaskBtn.addEventListener('click', () => {
+          removeAddArea();
+          target.classList.remove('hidden');
+        });
+
+        addArea.appendChild(changeTaskBtn);
+        addArea.appendChild(cancelTaskBtn);
+
+        addArea.addEventListener('keydown', function(e) {
+          if (e.key == 'Enter') {
+            changeInputtedTask();
+          } else if (e.key == 'Escape') {
+            removeAddArea();
+            target.classList.remove('hidden');
+          }
+        });
+
+        document.querySelector('.list-items').insertBefore(addArea, target);
+      }
 
       aDName.focus();
 
       const addInputtedTask = () => {
         if (validation.validateInput(aDName.value, aDNotes.value, aDDate.value, aDList.value, aDPriority.value, aDDuration.value)) {
           taskHandler.addTask(exportTaskInput(), database.getCurrentList());
+          displayList(database.getCurrentList());
+          // removeAddArea(); - not necessary because it's taken out with clearList
+        }
+      }
+      const changeInputtedTask = () => {
+        if (validation.validateInput(aDName.value, aDNotes.value, aDDate.value, aDList.value, aDPriority.value, aDDuration.value)) {
+          taskHandler.changeTask(exportTaskInput(), database.getCurrentList(), id);
           displayList(database.getCurrentList());
           // removeAddArea(); - not necessary because it's taken out with clearList
         }
@@ -245,14 +315,13 @@ const displayHandler = (() => {
     const addArea = document.querySelector('.add-area');
     addArea.remove();
   }
-  const makeListModal = () => {
+  const makeListModal = (type, target) => {
     const listModal = document.createElement('div');
     listModal.classList.add('list-modal');
     const listModalContent = document.createElement('div');
     listModalContent.classList.add('list-modal-content');
     const listModalPrompt = document.createElement('h2');
     listModalPrompt.classList.add('list-modal-prompt');
-    listModalPrompt.innerText = 'New List';
     const listModalName = document.createElement('input');
     listModalName.classList.add('list-modal-name');
     listModalName.placeholder = 'Name';
@@ -261,11 +330,40 @@ const displayHandler = (() => {
     listModalDescription.placeholder = 'Description';
     const listModalButton = document.createElement('button');
     listModalButton.classList.add('list-modal-button');
-    listModalButton.innerText = 'Create';
+    if (type == "add") {
+      listModalPrompt.innerText = 'New List';
+      listModalButton.innerText = 'Create';
+      listModalButton.addEventListener('click', () => {
+        addListFromModal();
+      });
+      listModal.addEventListener('keydown', function(e) {
+        if (e.key == 'Enter') {
+          addListFromModal();
+        } else if (e.key == 'Escape') {
+          removeListModal();
+        }
+      });
+    }
+    else if (type == "edit") {
+      listModalPrompt.innerText = 'Edit List';
+      listModalButton.innerText = 'Confirm';
+      console.log(target.dataset.id);
+      listModalName.value = database.getLists()[database.getListIndexFromId(target.dataset.id)].name;
+      listModalDescription.value = database.getLists()[database.getListIndexFromId(target.dataset.id)].description || "";
+      listModalButton.addEventListener('click', () => {
+        editListFromModal(target);
+      });
+      listModal.addEventListener('keydown', function(e) {
+        if (e.key == 'Enter') {
+          editListFromModal(target);
+        } else if (e.key == 'Escape') {
+          removeListModal();
+        }
+      });
+    }
 
-    listModalButton.addEventListener('click', () => {
-      addTaskFromModal();
-    });
+
+
 
     const appContainer = document.querySelector('.app-container');
 
@@ -278,22 +376,28 @@ const displayHandler = (() => {
 
     listModalName.focus();
 
-    listModal.addEventListener('click', function(e) {
+    listModal.addEventListener('mousedown', function(e) {
       if (e.target == listModal) {
         listModal.remove();
       }
     });
-    listModal.addEventListener('keydown', function(e) {
-      if (e.key == 'Enter') {
-        addTaskFromModal();
-      } else if (e.key == 'Escape') {
-        removeListModal();
-      }
-    });
 
-    const addTaskFromModal = () => {
+
+    const addListFromModal = () => {
       if (listModalName.value) {
         database.addList(listModalName.value, listModalDescription.value);
+        displayList(database.getCurrentList());
+        displaySidebar();
+        removeListModal();
+      }
+    }
+    const editListFromModal = target => {
+      if (listModalName.value) {
+        console.log("Id is " + target.id);
+        database.getLists()[database.getListIndexFromId(target.dataset.id)].name = listModalName.value;
+        database.getLists()[database.getListIndexFromId(target.dataset.id)].description = listModalDescription.value;
+        displayList(database.getCurrentList());
+        displaySidebar();
         removeListModal();
       }
     }
@@ -343,8 +447,11 @@ const displayHandler = (() => {
         database.setCurrentList(e.target.dataset.id);
         displayList(database.getCurrentList());
         displaySidebar();
-        // console.log(database.getCurrentList().getPercentCompleted());
       });
+      sidebarList.addEventListener('contextmenu', function(e) {
+        displayListContextMenu(e);
+        e.preventDefault();
+      }, false);
     });
     const appSidebar = document.querySelector('.app-sidebar');
     const appSidebarFooter = document.querySelector('.app-sidebar-footer');
@@ -365,6 +472,8 @@ const displayHandler = (() => {
     listContentHeader.classList.add('list-content-header');
 
     const currentList = database.getCurrentList();
+
+    console.log(currentList);
 
     const listTitle = document.createElement('h1');
     listTitle.classList.add('list-title');
@@ -394,7 +503,6 @@ const displayHandler = (() => {
     })
   }
   const displayTask = task => {
-    // console.log(task.dueDate);
     const listItems = document.querySelector('.list-items');
     const listItem = document.createElement('div');
     listItem.classList.add('list-item');
@@ -458,6 +566,10 @@ const displayHandler = (() => {
       displayItemContextMenu(e);
       e.preventDefault();
     }, false);
+    itemInfo.addEventListener('click', function(e) {
+      getTargetListItem(e.target).classList.add('hidden');
+      makeAddArea('edit', getTargetListItem(e.target));
+    });
     itemBox.addEventListener('click', function(e) {
       if (database.getCurrentList().toggleCompleted(e.target.parentElement.dataset.id)) {
         itemBox.parentElement.classList.add('list-item-completed');
@@ -504,25 +616,30 @@ const displayHandler = (() => {
       existingContextMenu.remove();
     }
     // Select the list-item element, not the checkbox or the task name span
-    let target = event.target;
-    if (target.classList[0] != 'list-item') target = target.parentElement;
-    if (target.classList[0] != 'list-item') target = target.parentElement;
-    if (target.classList[0] != 'list-item') target = target.parentElement;
-    // console.log(target.classList[0]);
+    let target = getTargetListItem(event.target);
     const contextMenu = document.createElement('div');
     contextMenu.classList.add('context-menu');
+    const contextMenuEdit = document.createElement('div');
+    contextMenuEdit.classList.add('context-menu-edit');
+    contextMenuEdit.innerText = 'Edit';
     const contextMenuDelete = document.createElement('div');
     contextMenuDelete.classList.add('context-menu-delete');
     contextMenuDelete.innerText = 'Delete';
 
-    console.log(target);
-
+    contextMenuEdit.addEventListener('click', function(e) {
+      // console.log("You are editing " + target.dataset.id);
+      target.classList.add('hidden');
+      makeAddArea("edit", target);
+      // taskHandler.changeTask(target.dataset.id, database.getCurrentList());
+      // contextMenu.remove();
+    });
     contextMenuDelete.addEventListener('click', function(e) {
-      console.log("You are deleting " + target.dataset.id);
+      // console.log("You are deleting " + target.dataset.id);
       taskHandler.removeTask(target.dataset.id, database.getCurrentList());
       contextMenu.remove();
     });
 
+    contextMenu.appendChild(contextMenuEdit);
     contextMenu.appendChild(contextMenuDelete);
     target.parentElement.appendChild(contextMenu);
 
@@ -538,9 +655,60 @@ const displayHandler = (() => {
         contextMenu.remove();
       }
     });
-
     // contextMenu.style.bottom = `${-y + contextMenu.offsetHeight/4}px`;
     // contextMenu.style.left = `${x - contextMenu.offsetWidth/2}px`;
+  }
+  const displayListContextMenu = (event) => {
+    const existingContextMenu = document.querySelector('.context-menu');
+    if (existingContextMenu != null) {
+      existingContextMenu.remove();
+    }
+
+    let target = event.target;
+    const contextMenu = document.createElement('div');
+    contextMenu.classList.add('context-menu');
+    const contextMenuEdit = document.createElement('div');
+    contextMenuEdit.classList.add('context-menu-edit');
+    contextMenuEdit.innerText = 'Edit';
+    const contextMenuDelete = document.createElement('div');
+    contextMenuDelete.classList.add('context-menu-delete');
+    contextMenuDelete.innerText = 'Delete';
+
+    contextMenuEdit.addEventListener('click', function(e) {
+      makeListModal('edit', target);
+      e.stopPropagation();
+      contextMenu.remove();
+    });
+    contextMenuDelete.addEventListener('click', function(e) {
+      database.removeList(target.dataset.id);
+      console.log('displaying ' + database.getCurrentList().name)
+      displayList(database.getCurrentList());
+      displaySidebar();
+      contextMenu.remove();
+    });
+
+    contextMenu.appendChild(contextMenuEdit);
+    contextMenu.appendChild(contextMenuDelete);
+    target.parentElement.appendChild(contextMenu);
+
+    const rect = target.parentElement.getBoundingClientRect();
+    const x = event.clientX;
+    const y = event.clientY;
+    
+    contextMenu.style.top = `${y}px`;
+    contextMenu.style.left = `${x}px`;
+
+    document.addEventListener('click', function(e) {
+      if (e.target != contextMenu) {
+        contextMenu.remove();
+      }
+    });
+  }
+  const getTargetListItem = target => {
+    if (target.classList[0] != 'list-item') target = target.parentElement;
+    if (target.classList[0] != 'list-item') target = target.parentElement;
+    if (target.classList[0] != 'list-item') target = target.parentElement;
+    return target;
   }
   return {
     clearList,
@@ -561,13 +729,14 @@ const database = (() => {
     lists.push(list);
     setCurrentList(id);
     id++;
-    displayHandler.displayList(currentList);
-    displayHandler.displaySidebar();
     return list;
   }
   const removeList = id => {
     const index = getListIndexFromId(id);
-    lists.splice(index, 1);
+    const removedList = lists.splice(index, 1);
+    // console.log(removedList[0]);
+    // console.log('setting current list to ' + lists[0].name);
+    if (currentList == removedList[0]) currentList = lists[0];
   }
   const getListIndexFromId = id => {
     const index = lists.findIndex(list => {
@@ -598,13 +767,14 @@ const database = (() => {
     getLists,
     getCurrentList,
     setCurrentList,
+    getListIndexFromId,
     addList,
     removeList,
   }
 })();
 
 database.addList('Today', "It's better than yesterday");
-taskHandler.addTask({'name': `Book flights`, 'dueDate': new Date('07-13-2021'), 'notes': "I have literally written the longest note in the history of notes. If you wish to defeat me, you must challenge me to a note-making note-taking duel to the death."}, database.getCurrentList());
+taskHandler.addTask({'name': `Book flights`, 'dueDate': new Date('07-16-2021'), 'notes': "I have literally written the longest note in the history of notes. If you wish to defeat me, you must challenge me to a note-making note-taking duel to the death."}, database.getCurrentList());
 taskHandler.addTask({'name': `Read about the metro`}, database.getCurrentList());
 taskHandler.addTask({'name': `Borrow Sarah's travel guide`, 'duration': '45min'}, database.getCurrentList());
 taskHandler.addTask({'name': `Book a hotel room`}, database.getCurrentList());
@@ -619,20 +789,4 @@ database.setCurrentList(0);
 displayHandler.displayList(database.getCurrentList());
 displayHandler.displaySidebar();
 
-console.log(database.getCurrentList());
-
-// setTimeout(() => {
-//   displayHandler.clearSidebar();
-// }, 2000)
-//testing
-
-// const sampleTodo = todoFactory('Power adapter', 'Buy from Ace Hardware', new Date(2021, 6, 15));
-// const sampleList = listFactory('Vacation in Rome', `We'll go from June 14-22 and stop through London on the way back to visit Jane and Paolo. Monti looks like a great place to stay. Maybe do a night out in Trastevere.`);
-
-// console.log({sampleTodo});
-// console.log({sampleList});
-
-// sampleList.addTodo(sampleTodo);
-// sampleList.addTodo(sampleTodo);
-
-// console.log({sampleList});
+// console.log(database.getCurrentList());

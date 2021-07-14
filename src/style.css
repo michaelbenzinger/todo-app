@@ -466,6 +466,10 @@ font-size: 0.98em;
   padding: 0.3em 0.8em;
   margin: 0.6em 0.1em 0 1em;
 }
+.change-task-btn {
+  padding: 0.3em 0.8em;
+  margin: 0.6em 0.1em 0 1em;
+}
 .cancel-task-btn {
   padding: 0.3em 0.8em;
   margin: 0.6em 0 0 0.1em;
@@ -475,12 +479,12 @@ font-size: 0.98em;
   position: absolute;
   cursor: pointer;
 }
-.context-menu-delete {
+.context-menu div {
   background-color: var(--gray-0);
   padding: 0.5em 0.75em;
   transition: background-color 0.2s;
 }
-.context-menu-delete:hover {
+.context-menu div:hover {
   background-color: var(--blue-1);
 }
 .list-modal {
@@ -525,6 +529,9 @@ font-size: 0.98em;
   height: 3.3em;
   margin-bottom: 0.3em;
   resize: vertical;
+}
+.hidden {
+  display: none;
 }
 p {
   line-height: 1.4em;
