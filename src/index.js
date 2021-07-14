@@ -116,6 +116,7 @@ const taskHandler = (() => {
   }
   const changeTask = ({name, notes, dueDate, list, duration, priority}, targetList, existingId) => {
     const newTask = todoFactory(name, notes, dueDate, list, duration, priority, id);
+    newTask.completed = targetList.todos[targetList.getIndexFromId(existingId)].completed;
     targetList.todos[targetList.getIndexFromId(existingId)] = newTask;
     id ++;
   }
@@ -183,13 +184,47 @@ const displayHandler = (() => {
       aDDate.classList.add('a-d-date');
       aDDate.type = 'date';
       
-      const aDList = document.createElement('input');
+      const aDList = document.createElement('select');
+      aDList.name = 'list';
       aDList.classList.add('a-d-list');
-      aDList.placeholder = 'list';
 
-      const aDPriority = document.createElement('input');
+      let lists = database.getLists();
+      lists.forEach(list => {
+        const aDListInstance = document.createElement('option');
+        aDListInstance.value = list.name;
+        aDListInstance.innerText = list.name;
+        aDListInstance.classList.add('a-d-list-instance');
+        aDListInstance.dataset.id = list.id;
+        aDList.appendChild(aDListInstance);
+      });
+
+      const aDPriority = document.createElement('select');
+      aDPriority.name = 'priority';
       aDPriority.classList.add('a-d-priority');
-      aDPriority.placeholder = 'priority';
+      
+      const aDPriorityLabel = document.createElement('option');
+      aDPriorityLabel.value = "";
+      aDPriorityLabel.innerText = "priority";
+      aDPriorityLabel.disabled = true;
+      aDPriorityLabel.selected = true;
+      const aDPriorityNone = document.createElement('option');
+      aDPriorityNone.value = "";
+      aDPriorityNone.innerText = "none";
+      const aDPriority1 = document.createElement('option');
+      aDPriority1.value = "1"
+      aDPriority1.innerText = "1";
+      const aDPriority2 = document.createElement('option');
+      aDPriority2.value = "2"
+      aDPriority2.innerText = "2";
+      const aDPriority3 = document.createElement('option');
+      aDPriority3.value = "3"
+      aDPriority3.innerText = "3";
+
+      aDPriority.appendChild(aDPriorityLabel);
+      aDPriority.appendChild(aDPriority1);
+      aDPriority.appendChild(aDPriority2);
+      aDPriority.appendChild(aDPriority3);
+      aDPriority.appendChild(aDPriorityNone);
 
       const aDDuration = document.createElement('input');
       aDDuration.classList.add('a-d-duration');
@@ -273,6 +308,14 @@ const displayHandler = (() => {
         document.querySelector('.list-items').insertBefore(addArea, target);
       }
 
+      const listInstances = document.querySelectorAll('.a-d-list-instance');
+      console.log('testing');
+      listInstances.forEach(listInstance => {
+        if (listInstance.dataset.id == database.getCurrentList().id) {
+          listInstance.selected = true;
+        }
+      });
+
       aDName.focus();
 
       const addInputtedTask = () => {
@@ -328,13 +371,21 @@ const displayHandler = (() => {
     const listModalDescription = document.createElement('textarea');
     listModalDescription.classList.add('list-modal-description');
     listModalDescription.placeholder = 'Description';
+    const listModalButtons = document.createElement('div');
+    listModalButtons.classList.add('list-modal-buttons');
     const listModalButton = document.createElement('button');
     listModalButton.classList.add('list-modal-button');
+    const listModalCancelButton = document.createElement('button');
+    listModalCancelButton.classList.add('list-modal-cancel-button');
     if (type == "add") {
       listModalPrompt.innerText = 'New List';
       listModalButton.innerText = 'Create';
       listModalButton.addEventListener('click', () => {
         addListFromModal();
+      });
+      listModalCancelButton.innerText = 'Cancel';
+      listModalCancelButton.addEventListener('click', () => {
+        removeListModal();
       });
       listModal.addEventListener('keydown', function(e) {
         if (e.key == 'Enter') {
@@ -347,7 +398,10 @@ const displayHandler = (() => {
     else if (type == "edit") {
       listModalPrompt.innerText = 'Edit List';
       listModalButton.innerText = 'Confirm';
-      console.log(target.dataset.id);
+      listModalCancelButton.innerText = 'Cancel';
+      listModalCancelButton.addEventListener('click', () => {
+        removeListModal();
+      });
       listModalName.value = database.getLists()[database.getListIndexFromId(target.dataset.id)].name;
       listModalDescription.value = database.getLists()[database.getListIndexFromId(target.dataset.id)].description || "";
       listModalButton.addEventListener('click', () => {
@@ -370,7 +424,9 @@ const displayHandler = (() => {
     listModalContent.appendChild(listModalPrompt);
     listModalContent.appendChild(listModalName);
     listModalContent.appendChild(listModalDescription);
-    listModalContent.appendChild(listModalButton);
+    listModalButtons.appendChild(listModalButton);
+    listModalButtons.appendChild(listModalCancelButton);
+    listModalContent.appendChild(listModalButtons);
     listModal.appendChild(listModalContent);
     appContainer.appendChild(listModal);
 
@@ -393,7 +449,6 @@ const displayHandler = (() => {
     }
     const editListFromModal = target => {
       if (listModalName.value) {
-        console.log("Id is " + target.id);
         database.getLists()[database.getListIndexFromId(target.dataset.id)].name = listModalName.value;
         database.getLists()[database.getListIndexFromId(target.dataset.id)].description = listModalDescription.value;
         displayList(database.getCurrentList());
@@ -473,8 +528,6 @@ const displayHandler = (() => {
 
     const currentList = database.getCurrentList();
 
-    console.log(currentList);
-
     const listTitle = document.createElement('h1');
     listTitle.classList.add('list-title');
     listTitle.innerText = currentList.name;
@@ -549,6 +602,16 @@ const displayHandler = (() => {
       });
       itemDetails.appendChild(itemNotes);
     }
+    if (task.priority) {
+      const itemPriority = document.createElement('div');
+      itemPriority.classList.add('item-priority');
+      itemPriority.innerText = `P${task.priority}`;
+      itemPriority.dataset.id = task.id;
+      if (task.priority == 1) itemPriority.classList.add('priority-1');
+      else if (task.priority == 2) itemPriority.classList.add('priority-2');
+      else if (task.priority == 3) itemPriority.classList.add('priority-3');
+      itemDetails.appendChild(itemPriority);
+    }
 
     itemInfo.appendChild(itemName);
 
@@ -567,8 +630,10 @@ const displayHandler = (() => {
       e.preventDefault();
     }, false);
     itemInfo.addEventListener('click', function(e) {
-      getTargetListItem(e.target).classList.add('hidden');
-      makeAddArea('edit', getTargetListItem(e.target));
+      if (document.querySelector('.add-area') == null) {
+        getTargetListItem(e.target).classList.add('hidden');
+        makeAddArea('edit', getTargetListItem(e.target));
+      }
     });
     itemBox.addEventListener('click', function(e) {
       if (database.getCurrentList().toggleCompleted(e.target.parentElement.dataset.id)) {
@@ -681,7 +746,6 @@ const displayHandler = (() => {
     });
     contextMenuDelete.addEventListener('click', function(e) {
       database.removeList(target.dataset.id);
-      console.log('displaying ' + database.getCurrentList().name)
       displayList(database.getCurrentList());
       displaySidebar();
       contextMenu.remove();

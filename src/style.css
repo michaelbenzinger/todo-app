@@ -385,14 +385,26 @@ font-size: 0.98em;
   font-weight: 600;
   color: var(--orange-1);
 }
+.item-priority {
+  font-weight: 600;
+}
+.priority-1 {
+  color: var(--red-1);
+}
+.priority-2 {
+  color: var(--orange-1);
+}
+.priority-3 {
+  color: var(--forest-1);
+}
 .notes-pop-up {
-  font-size: 0.85em;
-  background-color: var(--yellow-2);
+  font-size: 0.9em;
+  background-color: white;
   max-width: 30ch;
   line-height: 1.3em;
   color: var(--gray-1);
   position: absolute;
-  padding: 0.5em;
+  padding: 0.7em 1em;
   border: 1px solid var(--gray-4);
   border-radius: 0.3em;
   animation-duration: 0.3s;
@@ -431,8 +443,8 @@ font-size: 0.98em;
   margin-top: 0.75em;
 }
 .a-d-name {
-  /* font-size: 1em; */
-  font-weight: 700;
+  font-size: 1em;
+  font-weight: 600;
   box-sizing: border-box;
   width: 100%;
   margin-bottom: 2px;
@@ -475,13 +487,15 @@ font-size: 0.98em;
   margin: 0.6em 0 0 0.1em;
 }
 .context-menu {
+  font-size: 0.94em;
+  width: 7em;
   color: var(--gray-8);
   position: absolute;
   cursor: pointer;
 }
 .context-menu div {
   background-color: var(--gray-0);
-  padding: 0.5em 0.75em;
+  padding: 0.75em 0.75em;
   transition: background-color 0.2s;
 }
 .context-menu div:hover {
@@ -503,7 +517,6 @@ font-size: 0.98em;
   align-items: center;
 }
 .list-modal-content {
-
   background-color: #fefefe;
   margin: 15% auto;
   padding: 20px;
@@ -514,15 +527,23 @@ font-size: 0.98em;
   justify-content: flex-start;
   align-items: flex-start;
 }
+.list-modal button {
+  padding: 0.3em 0.8em;
+  margin-top: 0.5em;
+  margin-right: 0.3em;
+}
 .list-modal-prompt {
-  margin-bottom: 0.3em;
+  font-size: 1.06em;
+  margin-bottom: 0.5em;
 }
 .list-modal-name {
+  font-size: 0.95em;
   box-sizing: border-box;
   width: 100%;
   margin-bottom: 0.3em;
 }
 .list-modal-description {
+  font-size: 0.95em;
   font-family: 'Source Sans Pro', 'Helvetica', 'Arial', sans-serif;
   box-sizing: border-box;
   width: 100%;
@@ -532,6 +553,44 @@ font-size: 0.98em;
 }
 .hidden {
   display: none;
+}
+input {
+  border: none;
+  border-bottom: 1px solid var(--gray-3);
+  border-radius: 0;
+  padding-bottom: 0.2rem;
+  outline: none;
+}
+input:focus-visible {
+  border-radius: 0;
+  outline: none;
+}
+textarea {
+  border: none;
+  border-bottom: 1px solid var(--gray-3);
+  border-radius: 0;
+  outline: none;
+  resize: vertical;
+  min-height: 2em;
+}
+textarea:focus-visible {
+  border-radius: 0;
+  outline: none;
+}
+select {
+  background-color: white;
+  border: none;
+  border-bottom: 1px solid var(--gray-3);
+  border-radius: 0;
+  padding-bottom: 0.2rem;
+  outline: none;
+}
+select:focus-visible {
+  border-radius: 0;
+  outline: none;
+}
+input[type="date"] {
+
 }
 p {
   line-height: 1.4em;
