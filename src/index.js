@@ -2,9 +2,9 @@ import './meyerreset.css';
 import './style.css';
 import { format } from 'date-fns';
 
-const todoFactory = (name, notes, dueDate, list, duration, priority, id) => {
+const todoFactory = (name, notes, dueDate, list, duration, priority, id, completed) => {
   const startDate = new Date(Date.now());
-  let completed = false;
+  completed = completed || false;
   const getDuedateShorthand = () => {
     const now = new Date(Date.now());
     const difference = (dueDate.getTime() - now.getTime()) / 1000 / 60 / 60 / 24;
@@ -109,8 +109,8 @@ const validation = (() => {
 
 const taskHandler = (() => {
   let id = 0;
-  const addTask = ({name, notes, dueDate, list, duration, priority}, targetList) => {
-    const newTask = todoFactory(name, notes, dueDate, list, duration, priority, id);
+  const addTask = ({name, notes, dueDate, list, duration, priority, completed}, targetList) => {
+    const newTask = todoFactory(name, notes, dueDate, list, duration, priority, id, completed);
     targetList.addTodo(newTask);
     id ++;
   }
@@ -191,7 +191,7 @@ const displayHandler = (() => {
       let lists = database.getLists();
       lists.forEach(list => {
         const aDListInstance = document.createElement('option');
-        aDListInstance.value = list.name;
+        aDListInstance.value = list.id;
         aDListInstance.innerText = list.name;
         aDListInstance.classList.add('a-d-list-instance');
         aDListInstance.dataset.id = list.id;
@@ -320,19 +320,25 @@ const displayHandler = (() => {
 
       const addInputtedTask = () => {
         if (validation.validateInput(aDName.value, aDNotes.value, aDDate.value, aDList.value, aDPriority.value, aDDuration.value)) {
-          taskHandler.addTask(exportTaskInput(), database.getCurrentList());
+          taskHandler.addTask(exportTaskInput(), database.getLists()[database.getListIndexFromId(aDList.value)]);
           displayList(database.getCurrentList());
           // removeAddArea(); - not necessary because it's taken out with clearList
         }
       }
       const changeInputtedTask = () => {
         if (validation.validateInput(aDName.value, aDNotes.value, aDDate.value, aDList.value, aDPriority.value, aDDuration.value)) {
-          taskHandler.changeTask(exportTaskInput(), database.getCurrentList(), id);
-          displayList(database.getCurrentList());
+          let completed = database.getCurrentList().getTaskFromId(id).completed;
+          if (aDList.value != database.getCurrentList().id) {
+            taskHandler.removeTask(id, database.getCurrentList());
+            taskHandler.addTask(exportTaskInput(completed), database.getLists()[database.getListIndexFromId(aDList.value)]);
+          } else {
+            taskHandler.changeTask(exportTaskInput(completed), database.getCurrentList(), id);
+            displayList(database.getCurrentList());
+          }
           // removeAddArea(); - not necessary because it's taken out with clearList
         }
       }
-      const exportTaskInput = () => {
+      const exportTaskInput = (completed) => {
         const name = aDName.value;
         const notes = aDNotes.value;
         let dueDate = null;
@@ -342,7 +348,7 @@ const displayHandler = (() => {
         const list = aDList.value;
         const priority = aDPriority.value;
         const duration = validation.convertDuration(aDDuration.value);
-        return {name, notes, dueDate, list, duration, priority};
+        return {name, notes, dueDate, list, duration, priority, completed};
       }
       const convertDateString = date => {
         let newDate = "";
