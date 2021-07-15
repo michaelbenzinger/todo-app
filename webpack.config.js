@@ -7,7 +7,7 @@ module.exports = {
     filename: 'bundle.js',
     path: path.resolve(__dirname, 'dist'),
   },
-  mode: 'development',
+  mode: 'production',
   module: {
     rules: [
       {
@@ -23,8 +23,5 @@ module.exports = {
         type: 'asset/resource',
       },
     ],
-  },
-  optimization: {
-    minimize: false
   },
 };

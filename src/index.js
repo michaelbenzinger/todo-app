@@ -570,10 +570,12 @@ const displayHandler = (() => {
     listItems.classList.add('list-items')
 
 
+    const appMainFooter = document.querySelector('.app-main-footer');
+
     listContentMain.appendChild(listItems);
     listContent.appendChild(listContentHeader);
     listContent.appendChild(listContentMain);
-    appMain.appendChild(listContent);
+    appMain.insertBefore(listContent, appMainFooter);
 
     list.todos.forEach(task => {
       displayTask(task);
