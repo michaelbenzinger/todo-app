@@ -5,9 +5,13 @@ import { format } from 'date-fns';
 const todoFactory = (name, notes, dueDate, list, duration, priority, id, completed) => {
   const startDate = new Date(Date.now());
   completed = completed || false;
-  const getDuedateShorthand = () => {
+  return {name, notes, dueDate, list, duration, priority, id, startDate, completed};
+};
+
+const todoFactoryFns = (() => {
+  const getDueDateShorthand = (task) => {
     const now = new Date(Date.now());
-    const difference = (dueDate.getTime() - now.getTime()) / 1000 / 60 / 60 / 24;
+    const difference = (task.dueDate.getTime() - now.getTime()) / 1000 / 60 / 60 / 24;
     if (difference < -1) {
       return 'Overdue'
     } else if (difference < 0) {
@@ -15,28 +19,24 @@ const todoFactory = (name, notes, dueDate, list, duration, priority, id, complet
     } else if (difference < 1) {
       return 'Tomorrow'
     } else if (difference < 6) {
-      return format(dueDate, 'EEEE')
+      return format(task.dueDate, 'EEEE')
     } else {
-      return format(dueDate, 'MMM d')
+      return format(task.dueDate, 'MMM d')
     }
   };
-  const getDueDateInputFormat = () => {
-    if (dueDate) {
-      let month = dueDate.getMonth() + 1;
+  const getDueDateInputFormat = (task) => {
+    if (task.dueDate) {
+      let month = task.dueDate.getMonth() + 1;
       if (month.toString().length == 1) {
         month = `0${month}`;
       }
-      let formatted = `${dueDate.getFullYear()}-${month}-${dueDate.getDate()}`;
+      let formatted = `${task.dueDate.getFullYear()}-${month}-${task.dueDate.getDate()}`;
       return formatted;
     } else {
       return "";
     }
   }
-  return {name, notes, dueDate, list, duration, priority, id, startDate, completed, getDuedateShorthand, getDueDateInputFormat};
-};
-
-const todoFactoryHelper = (() => {
-
+  return { getDueDateShorthand, getDueDateInputFormat }
 })();
 
 const listFactory = (name, description, id) => {
@@ -78,6 +78,10 @@ const listFactory = (name, description, id) => {
   }
   return {name, description, id, todos, addTodo, removeTodo, toggleCompleted, getIndexFromId, getTaskFromId, getPercentCompleted};
 }
+
+const listFactoryFns = (() => {
+  return { }
+})();
 
 const validation = (() => {
   const validateInput = (name, notes, dueDate, list, priority, duration) => {
@@ -235,7 +239,7 @@ const displayHandler = (() => {
         const thisTodo = database.getCurrentList().getTaskFromId(id);
         aDName.value = thisTodo.name;
         aDNotes.value = thisTodo.notes || "";
-        aDDate.value = thisTodo.getDueDateInputFormat();
+        aDDate.value = todoFactoryFns.getDueDateInputFormat(thisTodo);
         aDList.value = "";
         aDPriority.value = thisTodo.priority || "";
         aDDuration.value = thisTodo.duration || "";
@@ -587,7 +591,7 @@ const displayHandler = (() => {
     if (task.dueDate) {
       const itemDueDate = document.createElement('div');
       itemDueDate.classList.add('item-due-date');
-      itemDueDate.innerText = task.getDuedateShorthand();
+      itemDueDate.innerText = todoFactoryFns.getDueDateShorthand(task);
       itemDueDate.dataset.id = task.id;
       itemDetails.appendChild(itemDueDate);
     }
