@@ -5,82 +5,93 @@ import { format } from 'date-fns';
 const todoFactory = (name, notes, dueDate, list, duration, priority, id, completed) => {
   const startDate = new Date(Date.now());
   completed = completed || false;
+  // dueDate = todoFactoryFns.unparseDate(dueDate);
   return {name, notes, dueDate, list, duration, priority, id, startDate, completed};
 };
 
 const todoFactoryFns = (() => {
+  const unparseDate = (date) => {
+    if (typeof date == 'string') {
+      return new Date(date);
+    }
+    else {
+      return date;
+    }
+  }
   const getDueDateShorthand = (task) => {
     const now = new Date(Date.now());
-    const difference = (task.dueDate.getTime() - now.getTime()) / 1000 / 60 / 60 / 24;
-    if (difference < -1) {
+    const unparsedDate = unparseDate(task.dueDate);
+    const difference = (unparsedDate.getTime() - now.getTime()) / 1000 / 60 / 60 / 24;
+    if (difference < -0.9) {
       return 'Overdue'
-    } else if (difference < 0) {
+    } else if (difference < 0.1) {
       return 'Today'
-    } else if (difference < 1) {
+    } else if (difference < 1.1) {
       return 'Tomorrow'
-    } else if (difference < 6) {
-      return format(task.dueDate, 'EEEE')
+    } else if (difference < 6.1) {
+      return format(unparsedDate, 'EEEE')
     } else {
-      return format(task.dueDate, 'MMM d')
+      return format(unparsedDate, 'MMM d')
     }
   };
   const getDueDateInputFormat = (task) => {
     if (task.dueDate) {
-      let month = task.dueDate.getMonth() + 1;
+      const unparsedDate = unparseDate(task.dueDate);
+      let month = unparsedDate.getMonth() + 1;
       if (month.toString().length == 1) {
         month = `0${month}`;
       }
-      let formatted = `${task.dueDate.getFullYear()}-${month}-${task.dueDate.getDate()}`;
+      let formatted = `${unparsedDate.getFullYear()}-${month}-${unparsedDate.getDate()}`;
       return formatted;
     } else {
       return "";
     }
   }
-  return { getDueDateShorthand, getDueDateInputFormat }
+  return { unparseDate, getDueDateShorthand, getDueDateInputFormat }
 })();
 
 const listFactory = (name, description, id) => {
   const todos = [];
-  const addTodo = (task) => {
-    todos.push(task);
+  return {name, description, id, todos};
+}
+
+const listFactoryFns = (() => {
+  const addTodo = (task, list) => {
+    list.todos.push(task);
   }
-  const removeTodo = id => {
-    const index = getIndexFromId(id);
-    todos.splice(index, 1);
+  const removeTodo = (id, list) => {
+    const index = getIndexFromId(id, list);
+    list.todos.splice(index, 1);
   }
-  const toggleCompleted = id => {
-    const index = getIndexFromId(id);
-    if (todos[index].completed == false) {
-      todos[index].completed = true;
+  const toggleCompleted = (id, list) => {
+    const index = getIndexFromId(id, list);
+    if (list.todos[index].completed == false) {
+      list.todos[index].completed = true;
       return true;
     } else {
-      todos[index].completed = false;
+      list.todos[index].completed = false;
       return false;
     }
   }
-  const getIndexFromId = id => {
-    const index = todos.findIndex(todo => {
+  const getIndexFromId = (id, list) => {
+    const index = list.todos.findIndex(todo => {
       if (todo.id == id) {
         return true;
       }
     });
     return index;
   }
-  const getTaskFromId = id => {
-    return todos[getIndexFromId(id)];
+  const getTaskFromId = (id, list) => {
+    return list.todos[getIndexFromId(id, list)];
   }
-  const getPercentCompleted = () => {
+  const getPercentCompleted = (list) => {
     let completedCount = 0;
-    todos.forEach(todo => {
+    list.todos.forEach(todo => {
       if (todo.completed) completedCount ++;
     });
-    return completedCount/todos.length;
+    return completedCount/list.todos.length;
   }
-  return {name, description, id, todos, addTodo, removeTodo, toggleCompleted, getIndexFromId, getTaskFromId, getPercentCompleted};
-}
-
-const listFactoryFns = (() => {
-  return { }
+  return { addTodo, removeTodo, toggleCompleted, getIndexFromId, getTaskFromId, getPercentCompleted }
 })();
 
 const validation = (() => {
@@ -116,27 +127,31 @@ const taskHandler = (() => {
   let id = 0;
   const addTask = ({name, notes, dueDate, list, duration, priority, completed}, targetList) => {
     const newTask = todoFactory(name, notes, dueDate, list, duration, priority, id, completed);
-    targetList.addTodo(newTask);
+    listFactoryFns.addTodo(newTask, targetList);
     id ++;
   }
   const changeTask = ({name, notes, dueDate, list, duration, priority}, targetList, existingId) => {
     const newTask = todoFactory(name, notes, dueDate, list, duration, priority, id);
-    newTask.completed = targetList.todos[targetList.getIndexFromId(existingId)].completed;
-    targetList.todos[targetList.getIndexFromId(existingId)] = newTask;
+    newTask.completed = listFactoryFns.getTaskFromId(existingId, targetList).completed;
+    targetList.todos[listFactoryFns.getIndexFromId(existingId, targetList)] = newTask;
     id ++;
   }
   const removeTask = (id, list) => {
-    list.removeTodo(id);
+    listFactoryFns.removeTodo(id, list);
     displayHandler.displayList(list);
   }
   const getId = () => {
     return id;
+  }
+  const setId = (newId) => {
+    id = newId;
   }
   return {
     addTask,
     changeTask,
     removeTask,
     getId,
+    setId,
   };
 })();
 
@@ -236,7 +251,7 @@ const displayHandler = (() => {
       aDDuration.placeholder = 'duration';
 
       if (type == "edit") {
-        const thisTodo = database.getCurrentList().getTaskFromId(id);
+        const thisTodo = listFactoryFns.getTaskFromId(id, database.getCurrentList());
         aDName.value = thisTodo.name;
         aDNotes.value = thisTodo.notes || "";
         aDDate.value = todoFactoryFns.getDueDateInputFormat(thisTodo);
@@ -314,7 +329,6 @@ const displayHandler = (() => {
       }
 
       const listInstances = document.querySelectorAll('.a-d-list-instance');
-      console.log('testing');
       listInstances.forEach(listInstance => {
         if (listInstance.dataset.id == database.getCurrentList().id) {
           listInstance.selected = true;
@@ -327,12 +341,11 @@ const displayHandler = (() => {
         if (validation.validateInput(aDName.value, aDNotes.value, aDDate.value, aDList.value, aDPriority.value, aDDuration.value)) {
           taskHandler.addTask(exportTaskInput(), database.getLists()[database.getListIndexFromId(aDList.value)]);
           displayList(database.getCurrentList());
-          // removeAddArea(); - not necessary because it's taken out with clearList
         }
       }
       const changeInputtedTask = () => {
         if (validation.validateInput(aDName.value, aDNotes.value, aDDate.value, aDList.value, aDPriority.value, aDDuration.value)) {
-          let completed = database.getCurrentList().getTaskFromId(id).completed;
+          let completed = listFactoryFns.getTaskFromId(id, database.getCurrentList()).completed;
           if (aDList.value != database.getCurrentList().id) {
             taskHandler.removeTask(id, database.getCurrentList());
             taskHandler.addTask(exportTaskInput(completed), database.getLists()[database.getListIndexFromId(aDList.value)]);
@@ -649,7 +662,7 @@ const displayHandler = (() => {
       }
     });
     itemBox.addEventListener('click', function(e) {
-      if (database.getCurrentList().toggleCompleted(e.target.parentElement.dataset.id)) {
+      if (listFactoryFns.toggleCompleted(e.target.parentElement.dataset.id, database.getCurrentList())) {
         itemBox.parentElement.classList.add('list-item-completed');
       } else {
         itemBox.parentElement.classList.remove('list-item-completed');
@@ -664,7 +677,7 @@ const displayHandler = (() => {
       const listItems = document.querySelector('.list-items');
       listItems.appendChild(notesPopUp);
       const thisTodoId = event.target.parentElement.parentElement.parentElement.dataset.id;
-      notesPopUp.innerText = database.getCurrentList().getTaskFromId(thisTodoId).notes;
+      notesPopUp.innerText = listFactoryFns.getTaskFromId(thisTodoId, database.getCurrentList()).notes;
 
       const targetRect = event.target.getBoundingClientRect();
       const notesRect = notesPopUp.getBoundingClientRect();
@@ -705,14 +718,10 @@ const displayHandler = (() => {
     contextMenuDelete.innerText = 'Delete';
 
     contextMenuEdit.addEventListener('click', function(e) {
-      // console.log("You are editing " + target.dataset.id);
       target.classList.add('hidden');
       makeAddArea("edit", target);
-      // taskHandler.changeTask(target.dataset.id, database.getCurrentList());
-      // contextMenu.remove();
     });
     contextMenuDelete.addEventListener('click', function(e) {
-      // console.log("You are deleting " + target.dataset.id);
       taskHandler.removeTask(target.dataset.id, database.getCurrentList());
       contextMenu.remove();
     });
@@ -811,8 +820,6 @@ const database = (() => {
   const removeList = id => {
     const index = getListIndexFromId(id);
     const removedList = lists.splice(index, 1);
-    // console.log(removedList[0]);
-    // console.log('setting current list to ' + lists[0].name);
     if (currentList == removedList[0]) currentList = lists[0];
   }
   const getListIndexFromId = id => {
@@ -834,25 +841,17 @@ const database = (() => {
     return currentList;
   }
   const setLocalStorage = () => {
-    console.log('setting');
     localStorage.setItem('lists', JSON.stringify(lists));
-    console.log(lists);
     localStorage.setItem('currentList', JSON.stringify(currentList));
-    localStorage.setItem('id', id);
+    localStorage.setItem('listId', id);
+    localStorage.setItem('taskId', taskHandler.getId());
   }
   const getLocalStorage = () => {
-    console.log('getting');
     lists = JSON.parse(localStorage.getItem('lists'));
-    console.log(lists);
-    currentList = JSON.parse(localStorage.getItem('currentList'));
-    id = localStorage.getItem('id');
+    setCurrentList(JSON.parse(localStorage.getItem('currentList')).id);
+    id = localStorage.getItem('listId');
+    taskHandler.setId(localStorage.getItem('taskId'));
   }
-  // let currentList = listFactory('Inbox', 'The best inbox ever');
-  // addList('Today', "It's better than yesterday");
-  // taskHandler.addTask({'name': `Book flights`, 'dueDate': new Date('07-13-2021'), 'notes': "I have literally written the longest note in the history of notes. If you wish to defeat me, you must challenge me to a note-making note-taking duel to the death."}, currentList);
-  // taskHandler.addTask({'name': `Read about the metro`}, currentList);
-  // taskHandler.addTask({'name': `Borrow Sarah's travel guide`, 'duration': '45min'}, currentList);
-  // taskHandler.addTask({'name': `Book a hotel room`}, currentList);
 
   return {
     getLists,
@@ -866,27 +865,22 @@ const database = (() => {
   }
 })();
 
-localStorage.clear();
+// localStorage.clear();
 
 if (localStorage.getItem('lists')) {
   database.getLocalStorage();
 } else {
-  database.addList('Today', "It's better than yesterday");
-  taskHandler.addTask({'name': `Book flights`, 'dueDate': new Date('07-16-2021'), 'notes': "I have literally written the longest note in the history of notes. If you wish to defeat me, you must challenge me to a note-making note-taking duel to the death."}, database.getCurrentList());
-  taskHandler.addTask({'name': `Read about the metro`}, database.getCurrentList());
-  taskHandler.addTask({'name': `Borrow Sarah's travel guide`, 'duration': '45min'}, database.getCurrentList());
-  taskHandler.addTask({'name': `Book a hotel room`}, database.getCurrentList());
+  database.addList('Inbox');
+  taskHandler.addTask({'name': `Add tasks with the + button or with [ Shift + N ].`}, database.getCurrentList());
+  taskHandler.addTask({'name': `Click on a task to edit its contents.`, 'priority': '3', 'duration': '45min'}, database.getCurrentList());
+  taskHandler.addTask({'name': `You can right-click a task or a list to edit or delete it.`}, database.getCurrentList());
+  taskHandler.addTask({'name': `Visit michaelbenzinger on GitHub`, 'dueDate': new Date(Date.now()), 'notes': "Thanks for using my app. You'll find my other projects on GitHub.", 'priority': '1'}, database.getCurrentList());
 
-  database.addList('Tomorrow');
-  taskHandler.addTask({'name': `Eat Macaroni`, 'dueDate': new Date(Date.now())}, database.getCurrentList());
-  taskHandler.addTask({'name': `Eat some cheese`, 'duration': '60min'}, database.getCurrentList());
-  taskHandler.addTask({'name': `Go to bed with a full stomach`, 'notes': 'Sweet dreams!'}, database.getCurrentList());
+  database.addList('New List', 'You can add a description for your list by right-clicking its title in the sidebar.');
+  taskHandler.addTask({'name': `Nothing to see here.`, 'notes': 'Nothing to see here, either.'}, database.getCurrentList());
 
   database.setCurrentList(0);
 }
 
-console.log(database.getCurrentList());
 displayHandler.displayList(database.getCurrentList());
 displayHandler.displaySidebar();
-
-// console.log(database.getCurrentList());
