@@ -20,9 +20,6 @@ const todoFactory = (name, notes, dueDate, list, duration, priority, id, complet
       return format(dueDate, 'MMM d')
     }
   };
-  const getDurationShorthand = () => {
-
-  };
   const getDueDateInputFormat = () => {
     if (dueDate) {
       let month = dueDate.getMonth() + 1;
@@ -35,8 +32,12 @@ const todoFactory = (name, notes, dueDate, list, duration, priority, id, complet
       return "";
     }
   }
-  return {name, notes, dueDate, list, duration, priority, id, startDate, completed, getDuedateShorthand, getDurationShorthand, getDueDateInputFormat};
+  return {name, notes, dueDate, list, duration, priority, id, startDate, completed, getDuedateShorthand, getDueDateInputFormat};
 };
+
+const todoFactoryHelper = (() => {
+
+})();
 
 const listFactory = (name, description, id) => {
   const todos = [];
@@ -560,6 +561,8 @@ const displayHandler = (() => {
     list.todos.forEach(task => {
       displayTask(task);
     })
+
+    database.setLocalStorage();
   }
   const displayTask = task => {
     const listItems = document.querySelector('.list-items');
@@ -793,7 +796,7 @@ const displayHandler = (() => {
 const database = (() => {
   let id = 0;
   let currentList = null;
-  const lists = [];
+  let lists = [];
   const addList = (name, description) => {
     const list = listFactory(name, description, id);
     lists.push(list);
@@ -826,6 +829,20 @@ const database = (() => {
     currentList = lists[getListIndexFromId(id)];
     return currentList;
   }
+  const setLocalStorage = () => {
+    console.log('setting');
+    localStorage.setItem('lists', JSON.stringify(lists));
+    console.log(lists);
+    localStorage.setItem('currentList', JSON.stringify(currentList));
+    localStorage.setItem('id', id);
+  }
+  const getLocalStorage = () => {
+    console.log('getting');
+    lists = JSON.parse(localStorage.getItem('lists'));
+    console.log(lists);
+    currentList = JSON.parse(localStorage.getItem('currentList'));
+    id = localStorage.getItem('id');
+  }
   // let currentList = listFactory('Inbox', 'The best inbox ever');
   // addList('Today', "It's better than yesterday");
   // taskHandler.addTask({'name': `Book flights`, 'dueDate': new Date('07-13-2021'), 'notes': "I have literally written the longest note in the history of notes. If you wish to defeat me, you must challenge me to a note-making note-taking duel to the death."}, currentList);
@@ -840,22 +857,31 @@ const database = (() => {
     getListIndexFromId,
     addList,
     removeList,
+    setLocalStorage,
+    getLocalStorage,
   }
 })();
 
-database.addList('Today', "It's better than yesterday");
-taskHandler.addTask({'name': `Book flights`, 'dueDate': new Date('07-16-2021'), 'notes': "I have literally written the longest note in the history of notes. If you wish to defeat me, you must challenge me to a note-making note-taking duel to the death."}, database.getCurrentList());
-taskHandler.addTask({'name': `Read about the metro`}, database.getCurrentList());
-taskHandler.addTask({'name': `Borrow Sarah's travel guide`, 'duration': '45min'}, database.getCurrentList());
-taskHandler.addTask({'name': `Book a hotel room`}, database.getCurrentList());
+localStorage.clear();
 
-database.addList('Tomorrow');
-taskHandler.addTask({'name': `Eat Macaroni`, 'dueDate': new Date(Date.now())}, database.getCurrentList());
-taskHandler.addTask({'name': `Eat some cheese`, 'duration': '60min'}, database.getCurrentList());
-taskHandler.addTask({'name': `Go to bed with a full stomach`, 'notes': 'Sweet dreams!'}, database.getCurrentList());
+if (localStorage.getItem('lists')) {
+  database.getLocalStorage();
+} else {
+  database.addList('Today', "It's better than yesterday");
+  taskHandler.addTask({'name': `Book flights`, 'dueDate': new Date('07-16-2021'), 'notes': "I have literally written the longest note in the history of notes. If you wish to defeat me, you must challenge me to a note-making note-taking duel to the death."}, database.getCurrentList());
+  taskHandler.addTask({'name': `Read about the metro`}, database.getCurrentList());
+  taskHandler.addTask({'name': `Borrow Sarah's travel guide`, 'duration': '45min'}, database.getCurrentList());
+  taskHandler.addTask({'name': `Book a hotel room`}, database.getCurrentList());
 
-database.setCurrentList(0);
+  database.addList('Tomorrow');
+  taskHandler.addTask({'name': `Eat Macaroni`, 'dueDate': new Date(Date.now())}, database.getCurrentList());
+  taskHandler.addTask({'name': `Eat some cheese`, 'duration': '60min'}, database.getCurrentList());
+  taskHandler.addTask({'name': `Go to bed with a full stomach`, 'notes': 'Sweet dreams!'}, database.getCurrentList());
 
+  database.setCurrentList(0);
+}
+
+console.log(database.getCurrentList());
 displayHandler.displayList(database.getCurrentList());
 displayHandler.displaySidebar();
 
